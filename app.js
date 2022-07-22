@@ -13,8 +13,8 @@ const io = socketIO(server, {
   allowEIO3: true
 })
 
-server.listen(3001, () => {
-  logger('Socket IO server listening on port 3001')
+server.listen(80, () => {
+  logger('Socket IO server listening on port 80')
 })
 
 app.get('/', (request, response) => {
