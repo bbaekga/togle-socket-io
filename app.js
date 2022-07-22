@@ -25,7 +25,7 @@ app.get('/', (request, response) => {
 
 setInterval(() => {
   request({
-    url: 'http://localhost:3001',
+    url: `http://localhost:${port}`,
     method: 'GET'
   })
 }, 600000)
