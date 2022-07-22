@@ -12,9 +12,10 @@ const {Player} = require('./player')
 const io = socketIO(server, {
   allowEIO3: true
 })
+const port = process.env.PORT || 3001
 
-server.listen(80, () => {
-  logger('Socket IO server listening on port 80')
+server.listen(port, () => {
+  logger(`Socket IO server listening on port ${port}`)
 })
 
 app.get('/', (request, response) => {
