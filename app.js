@@ -25,10 +25,10 @@ app.get('/', (request, response) => {
 
 setInterval(() => {
   request({
-    url: `https://togle-socket-io.heroku.com`,
+    url: 'https://togle-socket-io.herokuapp.com',
     method: 'GET'
   })
-}, 6000 * 60 * 10)
+}, 1000 * 60 * 10)
 
 function logger(message, data = null) {
   if (data) {
