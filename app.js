@@ -116,6 +116,7 @@ function chooseTurn(data, socket) {
     room.setStone()
     fiveStoneIO.to(room.id).emit('play-room-updated', RoomManager.get(room.id))
   }
+  logger('choose-turn', RoomManager.get(player.roomId))
 }
 
 function gameStart(socket) {
