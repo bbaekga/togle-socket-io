@@ -47,6 +47,10 @@ fiveStoneIO.on('connection', socket => {
   socket.on('score-updated', () => {
     fiveStoneIO.emit('score-updated')
   })
+
+  socket.on('chat', data => chat(data, socket))
+  socket.on('typing-start', () => typingStart(socket))
+  socket.on('typing-end', () => typingEnd(socket))
   socket.on('disconnect', () => {
     const player = PlayerManager.get({socketId: socket.id})
     PlayerManager.remove({socketId: socket.id})
@@ -144,4 +148,25 @@ function giveUp(socket) {
   const room = RoomManager.get(player.roomId)
   let targetId = room.player1.id === player.id ? room.player2.socketId : room.player1.socketId
   fiveStoneIO.to(targetId).emit('rival-give-up')
+}
+
+function chat(data, socket) {
+  const player = PlayerManager.get({socketId: socket.id})
+  const room = RoomManager.get(player.roomId)
+  let targetId = room.player1.id === player.id ? room.player2.socketId : room.player1.socketId
+  fiveStoneIO.to(targetId).emit('chat-message', data)
+}
+
+function typingStart(socket) {
+  const player = PlayerManager.get({socketId: socket.id})
+  const room = RoomManager.get(player.roomId)
+  let targetId = room.player1.id === player.id ? room.player2.socketId : room.player1.socketId
+  fiveStoneIO.to(targetId).emit('rival-typing-start')
+}
+
+function typingEnd(socket) {
+  const player = PlayerManager.get({socketId: socket.id})
+  const room = RoomManager.get(player.roomId)
+  let targetId = room.player1.id === player.id ? room.player2.socketId : room.player1.socketId
+  fiveStoneIO.to(targetId).emit('rival-typing-end')
 }
