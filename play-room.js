@@ -76,12 +76,16 @@ class PlayRoom {
     }
   }
 
+  initStones() {
+    this.player1.initStone()
+    this.player2.initStone()
+  }
+
   setStone() {
     const player1Choice = this.player1.choice
     const player2Choice = this.player2.choice
     if (player1Choice === player2Choice) {
-      this.player1.initStone()
-      this.player2.initStone()
+      this.initStones()
       return
     }
     if (choiceSetter[`${player1Choice}-${player2Choice}`]) {

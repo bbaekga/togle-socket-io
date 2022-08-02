@@ -43,6 +43,10 @@ fiveStoneIO.on('connection', socket => {
   socket.on('choose-turn', data => chooseTurn(data, socket))
   socket.on('fight', () => gameStart(socket))
   socket.on('put-on-stone', data => putOnStone(data, socket))
+  socket.on('give-up', () => giveUp(socket))
+  socket.on('score-updated', () => {
+    fiveStoneIO.emit('score-updated')
+  })
   socket.on('disconnect', () => {
     const player = PlayerManager.get({socketId: socket.id})
     PlayerManager.remove({socketId: socket.id})
@@ -121,6 +125,9 @@ function chooseTurn(data, socket) {
 
 function gameStart(socket) {
   const player = PlayerManager.get({socketId: socket.id})
+  const room = RoomManager.get(player.roomId)
+  room.player1.choice = null
+  room.player2.choice = null
   fiveStoneIO.to(player.roomId).emit('game-start')
 }
 
@@ -130,4 +137,11 @@ function putOnStone(data, socket) {
   const room = RoomManager.get(player.roomId)
   let targetId = room.player1.id === player.id ? room.player2.socketId : room.player1.socketId
   fiveStoneIO.to(targetId).emit('stone-placed', data)
+}
+
+function giveUp(socket) {
+  const player = PlayerManager.get({socketId: socket.id})
+  const room = RoomManager.get(player.roomId)
+  let targetId = room.player1.id === player.id ? room.player2.socketId : room.player1.socketId
+  fiveStoneIO.to(targetId).emit('rival-give-up')
 }
