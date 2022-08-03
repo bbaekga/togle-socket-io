@@ -51,13 +51,14 @@ fiveStoneIO.on('connection', socket => {
   socket.on('chat', data => chat(data, socket))
   socket.on('typing-start', () => typingStart(socket))
   socket.on('typing-end', () => typingEnd(socket))
+  socket.on('get-chat-messages', () => getChatMessage(socket))
   socket.on('disconnect', () => {
     const player = PlayerManager.get({socketId: socket.id})
     PlayerManager.remove({socketId: socket.id})
     if (player && player.roomId) {
       leaveRoom({roomId: player.roomId}, socket)
     }
-    logger(`Player leave waiting room...`, player)
+    logger(`Player leave waiting room...`, player?.name)
   })
 })
 
@@ -67,8 +68,9 @@ function broadCastWaitingRoom() {
 
 function joinWaitingRoom(data, socket) {
   PlayerManager.add(Object.assign({}, data, {socketId: socket.id}))
-  logger('Player waiting room entered...', PlayerManager.get({socketId: socket.id}))
-  logger('All Players', PlayerManager.getAll())
+  const player = PlayerManager.get({socketId: socket.id})
+  logger(`Player waiting room entered...`, player?.name)
+  logger('All Players', PlayerManager.getAll().map(p => p.name))
 }
 
 function createRoom(data, socket) {
@@ -80,12 +82,11 @@ function createRoom(data, socket) {
   player.enterRoom(room.id)
   socket.join(room.id)
   broadCastWaitingRoom()
-  logger('Room created...', room)
+  logger('Room created...', `${room?.roomName} : ${player.name}`)
 }
 
 function leaveRoom(data, socket) {
   const {roomId} = data
-  logger('Player leave a room...', data)
   const player = PlayerManager.get({socketId: socket.id})
   if (player) {
     player.leaveRoom()
@@ -94,6 +95,7 @@ function leaveRoom(data, socket) {
   if (room) {
     room.leave(player?.id)
   }
+  logger('Player leave a room...', `${room?.roomName} : ${player?.name ?? ''}`)
   broadCastWaitingRoom()
 }
 
@@ -103,6 +105,8 @@ function enterRoom(data, socket) {
   RoomManager.enter(roomId, player)
   socket.join(roomId)
   broadCastWaitingRoom()
+  const room = RoomManager.get(roomId)
+  logger('Player join the room...', `${room?.roomName} : ${player?.name}`)
 }
 
 function chooseTurn(data, socket) {
@@ -124,7 +128,8 @@ function chooseTurn(data, socket) {
     room.setStone()
     fiveStoneIO.to(room.id).emit('play-room-updated', RoomManager.get(room.id))
   }
-  logger('choose-turn', RoomManager.get(player.roomId))
+  const _room = RoomManager.get(player.roomId)
+  logger('choose-turn', `${_room.player1.name} : ${_room.player1.choice} | ${_room.player2.name} : ${_room.player2.choice}`)
 }
 
 function gameStart(socket) {
@@ -133,40 +138,62 @@ function gameStart(socket) {
   room.player1.choice = null
   room.player2.choice = null
   fiveStoneIO.to(player.roomId).emit('game-start')
+  logger('Game start...', `${room?.roomName} : ${room.player1.name} vs ${room.player2.name}`)
 }
 
 function putOnStone(data, socket) {
-  logger('put-on-stone', data)
   const player = PlayerManager.get({socketId: socket.id})
   const room = RoomManager.get(player.roomId)
-  let targetId = room.player1.id === player.id ? room.player2.socketId : room.player1.socketId
-  fiveStoneIO.to(targetId).emit('stone-placed', data)
+  let targetId = player.id === room?.player1?.id ? room?.player2?.socketId : room?.player1?.socketId
+  if (targetId) {
+    fiveStoneIO.to(targetId).emit('stone-placed', data)
+    logger('Player put on stone...', `${player?.name} row : ${data.row} column : ${data.column} color : ${data.color}`)
+  }
 }
 
 function giveUp(socket) {
   const player = PlayerManager.get({socketId: socket.id})
   const room = RoomManager.get(player.roomId)
-  let targetId = room.player1.id === player.id ? room.player2.socketId : room.player1.socketId
-  fiveStoneIO.to(targetId).emit('rival-give-up')
+  let targetId = player.id === room?.player1?.id ? room?.player2?.socketId : room?.player1?.socketId
+  if (targetId) {
+    fiveStoneIO.to(targetId).emit('rival-give-up')
+    logger('Player give up game...', `${room.roomName} : ${player.name}`)
+  }
 }
 
 function chat(data, socket) {
   const player = PlayerManager.get({socketId: socket.id})
   const room = RoomManager.get(player.roomId)
-  let targetId = room.player1.id === player.id ? room.player2.socketId : room.player1.socketId
-  fiveStoneIO.to(targetId).emit('chat-message', data)
+  room.chatMessage({
+    text: data,
+    playerId: player.id
+  })
+  let targetId = player.id === room?.player1?.id ? room?.player2?.socketId : room?.player1?.socketId
+  if (targetId) {
+    fiveStoneIO.to(targetId).emit('chat-message', data)
+  }
 }
 
 function typingStart(socket) {
   const player = PlayerManager.get({socketId: socket.id})
   const room = RoomManager.get(player.roomId)
-  let targetId = room.player1.id === player.id ? room.player2.socketId : room.player1.socketId
-  fiveStoneIO.to(targetId).emit('rival-typing-start')
+  let targetId = player.id === room?.player1?.id ? room?.player2?.socketId : room?.player1?.socketId
+  if (targetId) {
+    fiveStoneIO.to(targetId).emit('rival-typing-start')
+  }
 }
 
 function typingEnd(socket) {
   const player = PlayerManager.get({socketId: socket.id})
   const room = RoomManager.get(player.roomId)
-  let targetId = room.player1.id === player.id ? room.player2.socketId : room.player1.socketId
-  fiveStoneIO.to(targetId).emit('rival-typing-end')
+  let targetId = player.id === room?.player1?.id ? room?.player2?.socketId : room?.player1?.socketId
+  if (targetId) {
+    fiveStoneIO.to(targetId).emit('rival-typing-end')
+  }
+}
+
+function getChatMessage(socket) {
+  const player = PlayerManager.get({socketId: socket.id})
+  const room = RoomManager.get(player.roomId)
+  socket.emit('chat-messages', room.chatMessages)
 }

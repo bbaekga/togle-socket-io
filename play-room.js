@@ -24,6 +24,7 @@ class PlayRoom {
     this.player2 = data?.player2 ? data.player2 : new Player()
     this.createdAt = moment().format(dateTimeFormat)
     this.startedAt = null
+    this.chatMessages = []
   }
 
   get isEmptyRoom() {
@@ -45,8 +46,6 @@ class PlayRoom {
     if (this.player1.id && this.player2.id) {
       this.startedAt = moment().format(dateTimeFormat)
     }
-
-    logger('Player enter a room...', player, this)
   }
 
   leave(playerId) {
@@ -59,6 +58,7 @@ class PlayRoom {
       this.player1 = new Player()
       this.player2 = new Player()
     }
+    this.chatMessages = []
     this.startedAt = null
     this.player1.initStone()
     this.player2.initStone()
@@ -98,6 +98,10 @@ class PlayRoom {
     } else {
       this.player2.setWhite()
     }
+  }
+
+  chatMessage(message) {
+    this.chatMessages.push(message)
   }
 }
 
