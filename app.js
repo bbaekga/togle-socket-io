@@ -54,10 +54,10 @@ fiveStoneIO.on('connection', socket => {
   socket.on('get-chat-messages', () => getChatMessage(socket))
   socket.on('disconnect', () => {
     const player = PlayerManager.get({socketId: socket.id})
-    PlayerManager.remove({socketId: socket.id})
     if (player && player.roomId) {
       leaveRoom({roomId: player.roomId}, socket)
     }
+    PlayerManager.remove({socketId: socket.id})
     logger(`Player leave waiting room...`, player?.name)
   })
 })
